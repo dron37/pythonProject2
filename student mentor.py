@@ -8,10 +8,9 @@ class Student:
         self.grades = {}
 
     def __str__(self):
-        avg = self.__avg_grades_hw()
         courses_in_progress = ', '.join(course for course in self.courses_in_progress)
         finished_courses = ', '.join(course for course in self.finished_courses)
-
+        avg = self.__avg_grades_hw()
         return f'Имя: {self.name}\nФамилия: {self.surname}\nСредняя оценка за домашние задания: {avg:.1f}\n' \
                f'Курсы в процессе изучения: {courses_in_progress}\nЗавершенные курсы: {finished_courses}'
 
@@ -28,10 +27,25 @@ class Student:
 
     def __avg_grades_hw(self) -> float:
         """Вычисление средней оценки за домашние задания"""
+        if not self.grades:
+            return 0
         rates_list = [item for grade in self.grades.values() for item in grade]
-        self.avg = sum(rates_list) / len(rates_list)
+        return sum(rates_list) / len(rates_list)
 
-        return self.avg
+    def __lt__(self, other):
+        if not isinstance(other, Student):
+            return 'Ошибка' #Возвращаем сообщение об ошибке
+        return self.__avg_grades_hw() < other.__avg_grades_hw()
+
+    def __le__(self, other):
+        if not isinstance(other, Student):
+            return 'Ошибка'
+        return self.__avg_grades_hw() <= other.__avg_grades_hw()
+
+    def __eq__(self, other):
+        if not isinstance(other, Student):
+            return 'Ошибка'
+        return self.__avg_grades_hw() == other.__avg_grades_hw()
 
 
 class Mentor:
@@ -54,10 +68,25 @@ class Lecturer(Mentor):
         return Mentor.__str__(self) + f'\nСредняя оценка за лекции : {avg:.1f}'
 
     def __avg_grades_lecture(self) -> float:
+        if not self.grades:
+            return 0
         rates_list = [item for grade in self.grades.values() for item in grade]
-        self.avg = float(sum(rates_list) / len(rates_list))
+        return sum(rates_list) / len(rates_list)
 
-        return self.avg
+    def __lt__(self, other):
+        if not isinstance(other, Lecturer):
+            return 'Ошибка'
+        return self.__avg_grades_lecture() < other.__avg_grades_lecture()
+
+    def __le__(self, other):
+        if not isinstance(other, Lecturer):
+            return 'Ошибка'
+        return self.__avg_grades_lecture() <= other.__avg_grades_lecture()
+
+    def __eq__(self, other):
+        if not isinstance(other, Lecturer):
+            return 'Ошибка'
+        return self.__avg_grades_lecture() == other.__avg_grades_lecture()
 
 class Reviewer(Mentor):
     def rate_hw(self, student: object, course: str, grade: int):
@@ -70,28 +99,15 @@ class Reviewer(Mentor):
             return 'Ошибка'
 
 
-def avg_rate_students(obj_list: list, course: str) -> dict:
-    """Подсчитывает среднюю оценку на определенном курсе"""
-    avg_students = {}
-
-    for obj in obj_list:
-        if isinstance(obj, Student) and course in obj.courses_in_progress and course in obj.grades:
-            avg_rate_hw = sum(obj.grades[course]) / len(obj.grades[course])
-            avg_students[f'{obj.name} {obj.surname}'] = avg_rate_hw
-
-    return avg_students
-
-
-def avg_rate_lecturers(obj_list: list, course: str) -> dict:
-    """Подсчитывает среднюю оценку на определенном курсе"""
-    avg_lectures = {}
-
-    for obj in obj_list:
-        if isinstance(obj, Lecturer) and course in obj.courses_attached and course in obj.grades:
-            avg_rate_lecture = sum(obj.grades[course]) / len(obj.grades[course])
-            avg_lectures[f'{obj.name} {obj.surname}'] = avg_rate_lecture
-
-    return avg_lectures
+def avg_rate_persons(persons, course):
+    if not isinstance(persons, list):
+        return "Not list"
+    person_grades = [] #Определяемпустойсписок, кудабудемскладыватьоценки (обычная переменная без `self`)
+    for person in persons:
+        person_grades.extend(person.grades.get(course, [])) #Используя extend, добавляем оценки в список. Также используем метод get к словарю с оценками с дефолтным значением [], чтобы исключить ошибку в случае, если студент еще не получал оценок по данному курсу
+    if not person_grades: #Проверям не пустой ли список
+        return "По такому курсу ни у кого нет оценок"
+    return round(sum(person_grades) / len(person_grades), 2)#Сумму оценок списка делим на длину списка (для этого используем "sum" и "len"), 2)
 
 
 if __name__ == '__main__':
@@ -142,14 +158,13 @@ if __name__ == '__main__':
     print(reviewer_1)
     print(f'\n{reviewer_2}')
 
-    print(f'\nВывод средней оценки студентов по курсу Python:')
-    avg_rates_students = avg_rate_students([student_1, student_2], 'Python')
-    for k, v in avg_rates_students.items():
-        print(f'Средняя оценка по курсу Python студента {k} - {v:.1f}')
+    print(f'\nCредняя оценка студентов по курсу Python:')
+    print(avg_rate_persons([student_1, student_2], 'Python'))
 
-    print(f'\nВывод средней оценки лекторов по курсу Python:')
-    avg_rates_lectures = avg_rate_lecturers([lecture_1, lecture_2], 'Python')
-    for k, v in avg_rates_lectures.items():
-        print(f'Средняя оценка у лектора {k} в рамках курса Python - {v:.1f}')
+    print(f'\nCредняя оценка лекторов по курсу Python:')
+    print(avg_rate_persons([lecture_1, lecture_2], 'Python'))
 
-
+    print(f'\nСравнение средней оценки студентов')
+    print(student_1 > student_2)
+    print(f'\nСравнение средней оценки лекторов')
+    print(lecture_1 < lecture_2)
